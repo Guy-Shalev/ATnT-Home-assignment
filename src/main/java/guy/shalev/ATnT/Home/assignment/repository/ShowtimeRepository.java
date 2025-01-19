@@ -1,0 +1,32 @@
+package guy.shalev.ATnT.Home.assignment.repository;
+
+import guy.shalev.ATnT.Home.assignment.model.entities.Movie;
+import guy.shalev.ATnT.Home.assignment.model.entities.Showtime;
+import guy.shalev.ATnT.Home.assignment.model.entities.Theater;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Repository
+public interface ShowtimeRepository extends JpaRepository<Showtime, Long> {
+    List<Showtime> findByMovie(Movie movie);
+
+    List<Showtime> findByTheater(Theater theater);
+
+    List<Showtime> findByStartTimeBetween(LocalDateTime start, LocalDateTime end);
+
+    // Find overlapping showtimes for a theater
+    @Query("SELECT s FROM Showtime s WHERE s.theater = :theater " +
+            "AND ((s.startTime BETWEEN :start AND :end) OR " +
+            "(s.endTime BETWEEN :start AND :end) OR " +
+            "(s.startTime <= :start AND s.endTime >= :end))")
+    List<Showtime> findOverlappingShowtimes(
+            @Param("theater") Theater theater,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
+}
