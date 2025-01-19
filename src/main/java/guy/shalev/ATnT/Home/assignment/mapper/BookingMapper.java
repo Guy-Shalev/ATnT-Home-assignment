@@ -6,9 +6,10 @@ import guy.shalev.ATnT.Home.assignment.model.entities.Booking;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
-@Mapper(componentModel = "spring", uses = {ShowtimeMapper.class})
+@Mapper(componentModel = "spring", uses = {ShowtimeMapper.class}, imports = {LocalDateTime.class})
 public interface BookingMapper {
     @Mapping(source = "showtime", target = "showtime")
     BookingResponse toResponse(Booking booking);
