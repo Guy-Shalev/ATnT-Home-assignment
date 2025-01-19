@@ -5,8 +5,9 @@ import guy.shalev.ATnT.Home.assignment.model.dto.response.UserResponse;
 import org.springframework.transaction.annotation.Transactional;
 
 public interface UserService {
+
+    @Transactional
     void registerUser(UserRequest request);
 
-    @Transactional(readOnly = true)
     UserResponse getCurrentUser(String username);
 }

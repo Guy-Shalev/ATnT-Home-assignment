@@ -9,14 +9,10 @@ import guy.shalev.ATnT.Home.assignment.model.enums.UserRole;
 import guy.shalev.ATnT.Home.assignment.repository.UserRepository;
 import guy.shalev.ATnT.Home.assignment.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @Transactional
@@ -25,8 +21,9 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JdbcUserDetailsManager userDetailsManager;
+    private final JdbcTemplate jdbcTemplate;
 
+    @Transactional
     @Override
     public void registerUser(UserRequest request) {
         // Check if username already exists
@@ -34,36 +31,36 @@ public class UserServiceImpl implements UserService {
             throw new ConflictException("Username already exists");
         }
 
-        // Create authorities
-        String authority = request.getRole() == UserRole.ADMIN ? "ROLE_ADMIN" : "ROLE_CUSTOMER";
-        List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(authority));
+        // Save to Spring Security users table
+        jdbcTemplate.update(
+                "INSERT INTO users (username, password, enabled) VALUES (?, ?, ?)",
+                request.getUsername(),
+                passwordEncoder.encode(request.getPassword()),
+                true
+        );
 
-        // Create Spring Security user
-        String encodedPassword = passwordEncoder.encode(request.getPassword());
-        org.springframework.security.core.userdetails.User securityUser =
-                new org.springframework.security.core.userdetails.User(
-                        request.getUsername(),
-                        encodedPassword,
-                        authorities
-                );
+        // Save to Spring Security authorities table
+        jdbcTemplate.update(
+                "INSERT INTO authorities (username, authority) VALUES (?, ?)",
+                request.getUsername(),
+                request.getRole() == UserRole.ADMIN ? "ROLE_ADMIN" : "ROLE_CUSTOMER"
+        );
 
-        userDetailsManager.createUser(securityUser);
-
-        // Create our application user
-        User applicationUser = User.builder()
+        // Save to our application users table
+        User user = User.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .role(request.getRole())
                 .build();
 
-        userRepository.save(applicationUser);
+        userRepository.save(user);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public UserResponse getCurrentUser(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new NotFoundException("User not found"));
+
         return UserResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
