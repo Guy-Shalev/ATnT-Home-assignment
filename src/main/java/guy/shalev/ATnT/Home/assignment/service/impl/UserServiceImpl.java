@@ -23,7 +23,6 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final JdbcTemplate jdbcTemplate;
 
-    @Transactional
     @Override
     public void registerUser(UserRequest request) {
         // Check if username already exists
@@ -56,6 +55,7 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public UserResponse getCurrentUser(String username) {
         User user = userRepository.findByUsername(username)

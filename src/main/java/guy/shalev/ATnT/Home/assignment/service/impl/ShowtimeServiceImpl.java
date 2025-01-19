@@ -32,36 +32,51 @@ public class ShowtimeServiceImpl implements ShowtimeService {
 
     @Override
     public ShowtimeResponse createShowtime(ShowtimeRequest request) {
-        // Fetch movie and theater
-        Movie movie = movieRepository.findById(request.getMovieId())
-                .orElseThrow(() -> new NotFoundException("Movie not found with id: " + request.getMovieId()));
+        Movie movie = getMovie(request.getMovieId());
+        Theater theater = getTheater(request.getTheaterId());
 
-        Theater theater = theaterRepository.findById(request.getTheaterId())
-                .orElseThrow(() -> new NotFoundException("Theater not found with id: " + request.getTheaterId()));
+        validateTheaterCapacity(theater, request.getMaxSeats());
 
-        // Validate maximum seats against theater capacity
-        if (request.getMaxSeats() > theater.getCapacity()) {
+        LocalDateTime endTime = calculateEndTime(movie, request.getStartTime());
+        validateNoOverlappingShowtimes(theater, request.getStartTime(), endTime);
+
+        Showtime showtime = showtimeMapper.toEntity(movie, theater, request, endTime);
+        return showtimeMapper.toResponse(saveAndRefresh(showtime));
+    }
+
+    private Movie getMovie(Long movieId) {
+        return movieRepository.findById(movieId)
+                .orElseThrow(() -> new NotFoundException("Movie not found with id: " + movieId));
+    }
+
+    private Theater getTheater(Long theaterId) {
+        return theaterRepository.findById(theaterId)
+                .orElseThrow(() -> new NotFoundException("Theater not found with id: " + theaterId));
+    }
+
+    private void validateTheaterCapacity(Theater theater, int requestedSeats) {
+        if (requestedSeats > theater.getCapacity()) {
             throw new BadRequestException("Max seats cannot exceed theater capacity: " + theater.getCapacity());
         }
+    }
 
-        // Calculate end time based on movie duration
-        LocalDateTime endTime = request.getStartTime().plusMinutes(movie.getDuration());
+    private LocalDateTime calculateEndTime(Movie movie, LocalDateTime startTime) {
+        return startTime.plusMinutes(movie.getDuration());
+    }
 
-        // Check for overlapping showtimes
+    private void validateNoOverlappingShowtimes(Theater theater, LocalDateTime startTime, LocalDateTime endTime) {
         List<Showtime> overlappingShowtimes = showtimeRepository.findOverlappingShowtimes(
-                theater, request.getStartTime(), endTime);
+                theater, startTime, endTime);
 
         if (!overlappingShowtimes.isEmpty()) {
             throw new ConflictException("There is already a showtime scheduled in this theater at the requested time");
         }
+    }
 
-        // Create and save the showtime
-        Showtime showtime = showtimeMapper.toEntity(request);
-        showtime.setEndTime(endTime);
-        showtime.setAvailableSeats(request.getMaxSeats());
-
+    private Showtime saveAndRefresh(Showtime showtime) {
         Showtime savedShowtime = showtimeRepository.save(showtime);
-        return showtimeMapper.toResponse(savedShowtime);
+        return showtimeRepository.findById(savedShowtime.getId())
+                .orElseThrow(() -> new NotFoundException("Showtime not found after saving"));
     }
 
     @Transactional(readOnly = true)

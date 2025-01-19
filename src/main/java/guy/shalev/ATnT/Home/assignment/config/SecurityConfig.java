@@ -3,6 +3,8 @@ package guy.shalev.ATnT.Home.assignment.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -20,6 +22,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import javax.sql.DataSource;
+import java.io.IOException;
 import java.util.List;
 
 @Configuration
@@ -66,8 +69,22 @@ public class SecurityConfig {
     }
 
     @Bean
-    public UserDetailsService userDetailsService() {
-        return new JdbcUserDetailsManager(dataSource);
+    public JdbcUserDetailsManager userDetailsManager() {
+        JdbcUserDetailsManager manager = new JdbcUserDetailsManager(dataSource);
+        manager.setUsersByUsernameQuery("select username, password, enabled from users where username = ?");
+        manager.setAuthoritiesByUsernameQuery("select username, authority from authorities where username = ?");
+
+        // Initialize the database schema
+        Resource resource = new ClassPathResource("org/springframework/security/core/userdetails/jdbc/users.ddl");
+        try {
+            String sql = new String(resource.getInputStream().readAllBytes());
+            assert manager.getJdbcTemplate() != null;
+            manager.getJdbcTemplate().execute(sql);
+        } catch (IOException e) {
+            throw new RuntimeException("Could not initialize Spring Security schema", e);
+        }
+
+        return manager;
     }
 
     @Bean

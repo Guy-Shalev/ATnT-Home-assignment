@@ -33,9 +33,8 @@ public class BookingServiceImpl implements BookingService {
     private final BookingMapper bookingMapper;
 
     @Override
-    public BookingResponse createBooking(Long userId, BookingRequest request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+    public BookingResponse createBooking(String username, BookingRequest request) {
+        User user = getUserByUsername(username);
 
         Showtime showtime = showtimeRepository.findByIdWithLock(request.getShowtimeId())
                 .orElseThrow(() -> new NotFoundException("Showtime not found with id: " + request.getShowtimeId()));
@@ -77,9 +76,8 @@ public class BookingServiceImpl implements BookingService {
 
     @Transactional(readOnly = true)
     @Override
-    public List<BookingResponse> getUserBookings(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
+    public List<BookingResponse> getUserBookings(String username) {
+        User user = getUserByUsername(username);
         return bookingMapper.toResponseList(bookingRepository.findByUser(user));
     }
 
@@ -90,5 +88,10 @@ public class BookingServiceImpl implements BookingService {
                         Showtime.builder().id(showtimeId).build(),
                         seatNumber)
                 .isEmpty();
+    }
+
+    private User getUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new NotFoundException("User not found with username: " + username));
     }
 }

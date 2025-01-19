@@ -7,11 +7,13 @@ import guy.shalev.ATnT.Home.assignment.service.UserService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @RequiredArgsConstructor
-public class InitialDataConfig {
+public class InitialDataConfig implements ApplicationRunner {
 
     private final UserService userService;
 
@@ -24,10 +26,9 @@ public class InitialDataConfig {
     @Value("${app.admin.email}")
     private String adminEmail;
 
-    @PostConstruct
-    public void init() {
+    @Override
+    public void run(ApplicationArguments args) {
         try {
-            // Create initial admin user
             UserRequest adminUser = UserRequest.builder()
                     .username(adminUsername)
                     .password(adminPassword)

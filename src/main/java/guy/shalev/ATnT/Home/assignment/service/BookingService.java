@@ -7,13 +7,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 public interface BookingService {
-    BookingResponse createBooking(Long userId, BookingRequest request);
+    BookingResponse createBooking(String username, BookingRequest request);
 
     @Transactional(readOnly = true)
     BookingResponse getBooking(Long id);
 
     @Transactional(readOnly = true)
-    List<BookingResponse> getUserBookings(Long userId);
+    List<BookingResponse> getUserBookings(String username);
 
     @Transactional(readOnly = true)
     boolean isSeatAvailable(Long showtimeId, Integer seatNumber);
