@@ -3,6 +3,7 @@ package guy.shalev.ATnT.Home.assignment.model.entities;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -13,6 +14,7 @@ import java.util.List;
 @Entity
 @Table(name = "showtimes")
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Showtime {

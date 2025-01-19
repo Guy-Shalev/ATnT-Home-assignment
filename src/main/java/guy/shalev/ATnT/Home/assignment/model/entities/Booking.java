@@ -4,6 +4,7 @@ import guy.shalev.ATnT.Home.assignment.model.enums.BookingStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "bookings")
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Booking {
