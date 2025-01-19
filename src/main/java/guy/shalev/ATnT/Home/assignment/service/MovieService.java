@@ -20,5 +20,6 @@ public interface MovieService {
     void deleteMovie(Long id);
 
     @Transactional(readOnly = true)
-    List<MovieResponse> getMoviesByGenre(String genre);
+    List<MovieResponse> searchMovies(String title, String genre, Integer duration, String rating, Integer releaseYear);
+
 }

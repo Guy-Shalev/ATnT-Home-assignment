@@ -44,8 +44,13 @@ public class MovieController {
         movieService.deleteMovie(id);
     }
 
-    @GetMapping("/genre/{genre}")
-    public List<MovieResponse> getMoviesByGenre(@PathVariable String genre) {
-        return movieService.getMoviesByGenre(genre);
+    @GetMapping("/search")
+    public List<MovieResponse> searchMovies(
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) String genre,
+            @RequestParam(required = false) Integer duration,
+            @RequestParam(required = false) String rating,
+            @RequestParam(required = false) Integer releaseYear) {
+        return movieService.searchMovies(title, genre, duration, rating, releaseYear);
     }
 }

@@ -69,8 +69,8 @@ public class MovieServiceImpl implements MovieService {
 
     @Transactional(readOnly = true)
     @Override
-    public List<MovieResponse> getMoviesByGenre(String genre) {
-        List<Movie> movies = movieRepository.findByGenre(genre);
+    public List<MovieResponse> searchMovies(String title, String genre, Integer duration, String rating, Integer releaseYear) {
+        List<Movie> movies = movieRepository.searchMovies(title, genre, duration, rating, releaseYear);
         return movieMapper.toResponseList(movies);
     }
 }
