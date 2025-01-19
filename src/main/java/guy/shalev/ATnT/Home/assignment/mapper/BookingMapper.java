@@ -12,6 +12,10 @@ import java.util.List;
 @Mapper(componentModel = "spring", uses = {ShowtimeMapper.class}, imports = {LocalDateTime.class})
 public interface BookingMapper {
     @Mapping(source = "showtime", target = "showtime")
+    @Mapping(source = "seatNumber", target = "seatNumber")
+    @Mapping(source = "price", target = "price")
+    @Mapping(source = "bookingTime", target = "bookingTime")
+    @Mapping(source = "status", target = "status")
     BookingResponse toResponse(Booking booking);
 
     List<BookingResponse> toResponseList(List<Booking> bookings);

@@ -22,8 +22,9 @@ public class BookingController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public BookingResponse createBooking(@AuthenticationPrincipal UserDetails userDetails,
-                                         @RequestBody @Valid BookingRequest request) {
+    public List<BookingResponse> createBooking(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody @Valid BookingRequest request) {
         return bookingService.createBooking(userDetails.getUsername(), request);
     }
 

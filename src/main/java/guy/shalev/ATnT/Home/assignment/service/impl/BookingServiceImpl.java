@@ -5,6 +5,7 @@ import guy.shalev.ATnT.Home.assignment.exception.ConflictException;
 import guy.shalev.ATnT.Home.assignment.exception.NotFoundException;
 import guy.shalev.ATnT.Home.assignment.mapper.BookingMapper;
 import guy.shalev.ATnT.Home.assignment.model.dto.request.BookingRequest;
+import guy.shalev.ATnT.Home.assignment.model.dto.request.SeatRequest;
 import guy.shalev.ATnT.Home.assignment.model.dto.response.BookingResponse;
 import guy.shalev.ATnT.Home.assignment.model.entities.Booking;
 import guy.shalev.ATnT.Home.assignment.model.entities.Showtime;
@@ -15,6 +16,7 @@ import guy.shalev.ATnT.Home.assignment.repository.ShowtimeRepository;
 import guy.shalev.ATnT.Home.assignment.repository.UserRepository;
 import guy.shalev.ATnT.Home.assignment.service.BookingService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,43 +29,84 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BookingServiceImpl implements BookingService {
 
+    @Value("${app.booking.ticket.price}")
+    private BigDecimal ticketPrice;
+
     private final BookingRepository bookingRepository;
     private final ShowtimeRepository showtimeRepository;
     private final UserRepository userRepository;
     private final BookingMapper bookingMapper;
 
     @Override
-    public BookingResponse createBooking(String username, BookingRequest request) {
+    public List<BookingResponse> createBooking(String username, BookingRequest request) {
         User user = getUserByUsername(username);
+        Showtime showtime = getShowtimeWithLock(request.getShowtimeId());
 
-        Showtime showtime = showtimeRepository.findByIdWithLock(request.getShowtimeId())
-                .orElseThrow(() -> new NotFoundException("Showtime not found with id: " + request.getShowtimeId()));
+        validateBookingRequest(showtime, request);
+        List<Booking> bookings = createBookings(user, showtime, request.getSeats());
+        updateShowtimeSeats(showtime, request.getSeats().size());
 
-        if (showtime.getAvailableSeats() <= 0) {
-            throw new ConflictException("No seats available for this showtime");
+        List<Booking> savedBookings = bookingRepository.saveAll(bookings);
+        return bookingMapper.toResponseList(savedBookings);
+    }
+
+    private Showtime getShowtimeWithLock(Long showtimeId) {
+        return showtimeRepository.findByIdWithLock(showtimeId)
+                .orElseThrow(() -> new NotFoundException("Showtime not found with id: " + showtimeId));
+    }
+
+    private void validateBookingRequest(Showtime showtime, BookingRequest request) {
+        validateAvailableSeats(showtime, request.getSeats().size());
+        validateSeatNumbers(showtime, request.getSeats());
+        validateSeatsNotBooked(showtime, request.getSeats());
+    }
+
+    private void validateAvailableSeats(Showtime showtime, int requestedSeats) {
+        if (showtime.getAvailableSeats() < requestedSeats) {
+            throw new ConflictException(String.format(
+                    "Not enough seats available. Requested: %d, Available: %d",
+                    requestedSeats, showtime.getAvailableSeats()));
         }
+    }
 
-        if (request.getSeatNumber() > showtime.getMaxSeats()) {
-            throw new BadRequestException("Invalid seat number. Maximum seat number is: " + showtime.getMaxSeats());
+    private void validateSeatNumbers(Showtime showtime, List<SeatRequest> seats) {
+        for (SeatRequest seat : seats) {
+            if (seat.getSeatNumber() > showtime.getMaxSeats()) {
+                throw new BadRequestException(
+                        "Invalid seat number " + seat.getSeatNumber() +
+                                ". Maximum seat number is: " + showtime.getMaxSeats());
+            }
         }
+    }
 
-        if (bookingRepository.findByShowtimeAndSeatNumber(showtime, request.getSeatNumber()).isPresent()) {
-            throw new ConflictException("Seat " + request.getSeatNumber() + " is already booked");
-        }
+    private List<Booking> createBookings(User user, Showtime showtime, List<SeatRequest> seatRequests) {
+        return seatRequests.stream()
+                .map(seatRequest -> createSingleBooking(user, showtime, seatRequest))
+                .toList();
+    }
 
-        Booking booking = Booking.builder()
+    private Booking createSingleBooking(User user, Showtime showtime, SeatRequest seatRequest) {
+        return Booking.builder()
                 .user(user)
                 .showtime(showtime)
-                .seatNumber(request.getSeatNumber())
-                .price(BigDecimal.TEN)
+                .seatNumber(seatRequest.getSeatNumber())
                 .bookingTime(LocalDateTime.now())
                 .status(BookingStatus.CONFIRMED)
+                .price(ticketPrice)
                 .build();
+    }
 
-        showtime.setAvailableSeats(showtime.getAvailableSeats() - 1);
+    private void validateSeatsNotBooked(Showtime showtime, List<SeatRequest> seats) {
+        for (SeatRequest seat : seats) {
+            if (bookingRepository.findByShowtimeAndSeatNumber(showtime, seat.getSeatNumber()).isPresent()) {
+                throw new ConflictException("Seat " + seat.getSeatNumber() + " is already booked");
+            }
+        }
+    }
+
+    private void updateShowtimeSeats(Showtime showtime, int bookedSeats) {
+        showtime.setAvailableSeats(showtime.getAvailableSeats() - bookedSeats);
         showtimeRepository.save(showtime);
-
-        return bookingMapper.toResponse(bookingRepository.save(booking));
     }
 
     @Transactional(readOnly = true)

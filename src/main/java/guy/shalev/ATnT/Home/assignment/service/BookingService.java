@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 public interface BookingService {
-    BookingResponse createBooking(String username, BookingRequest request);
+    List<BookingResponse> createBooking(String username, BookingRequest request);
 
     @Transactional(readOnly = true)
     BookingResponse getBooking(Long id);
