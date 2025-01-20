@@ -1,8 +1,8 @@
 package guy.shalev.ATnT.Home.assignment.service.impl;
 
+import guy.shalev.ATnT.Home.assignment.exception.ErrorCode;
 import guy.shalev.ATnT.Home.assignment.exception.exceptions.BadRequestException;
 import guy.shalev.ATnT.Home.assignment.exception.exceptions.ConflictException;
-import guy.shalev.ATnT.Home.assignment.exception.ErrorCode;
 import guy.shalev.ATnT.Home.assignment.exception.exceptions.NotFoundException;
 import guy.shalev.ATnT.Home.assignment.mapper.ShowtimeMapper;
 import guy.shalev.ATnT.Home.assignment.model.dto.request.ShowtimeRequest;
@@ -110,43 +110,76 @@ public class ShowtimeServiceImpl implements ShowtimeService {
 
     @Override
     public ShowtimeResponse updateShowtime(Long id, ShowtimeRequest request) {
-        Showtime existingShowtime = showtimeRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(ErrorCode.SHOWTIME_NOT_FOUND, "Showtime not found with id: " + id));
+        Showtime existingShowtime = findExistingShowtime(id);
+        validateNoBookings(existingShowtime);
 
-        // If there are any bookings, prevent major changes
-        if (!existingShowtime.getBookings().isEmpty()) {
-            throw new BadRequestException(ErrorCode.SHOWTIME_HAS_BOOKINGS, "Cannot update showtime with existing bookings");
+        Movie movie = findMovie(request.getMovieId());
+        Theater theater = findTheater(request.getTheaterId());
+
+        LocalDateTime endTime = calculateEndTime(request.getStartTime(), movie);
+        checkOverlappingShowtimes(theater, request.getStartTime(), endTime, id);
+
+        Showtime updatedShowtime = updateShowtimeEntity(existingShowtime, movie, theater, request);
+        updatedShowtime = saveShowtime(updatedShowtime);
+
+        return showtimeMapper.toResponse(updatedShowtime);
+    }
+
+    private Showtime findExistingShowtime(Long id) {
+        return showtimeRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.SHOWTIME_NOT_FOUND,
+                        "Showtime not found with id: " + id));
+    }
+
+    private void validateNoBookings(Showtime showtime) {
+        if (!showtime.getBookings().isEmpty()) {
+            throw new BadRequestException(ErrorCode.SHOWTIME_HAS_BOOKINGS,
+                    "Cannot update showtime with existing bookings");
         }
+    }
 
-        Movie movie = movieRepository.findById(request.getMovieId())
-                .orElseThrow(() -> new NotFoundException(ErrorCode.MOVIE_NOT_FOUND, "Movie not found with id: " + request.getMovieId()));
+    private Movie findMovie(Long movieId) {
+        return movieRepository.findById(movieId)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.MOVIE_NOT_FOUND,
+                        "Movie not found with id: " + movieId));
+    }
 
-        Theater theater = theaterRepository.findById(request.getTheaterId())
-                .orElseThrow(() -> new NotFoundException(ErrorCode.THEATER_NOT_FOUND, "Theater not found with id: " + request.getTheaterId()));
+    private Theater findTheater(Long theaterId) {
+        return theaterRepository.findById(theaterId)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.THEATER_NOT_FOUND,
+                        "Theater not found with id: " + theaterId));
+    }
 
-        // Calculate new end time
-        LocalDateTime endTime = request.getStartTime().plusMinutes(movie.getDuration());
+    private LocalDateTime calculateEndTime(LocalDateTime startTime, Movie movie) {
+        return startTime.plusMinutes(movie.getDuration());
+    }
 
-        // Check for overlapping showtimes (excluding this showtime)
+    private void checkOverlappingShowtimes(Theater theater, LocalDateTime startTime,
+                                           LocalDateTime endTime, Long showtimeId) {
         List<Showtime> overlappingShowtimes = showtimeRepository.findOverlappingShowtimes(
-                        theater, request.getStartTime(), endTime).stream()
-                .filter(showtime -> !showtime.getId().equals(id))
+                        theater, startTime, endTime).stream()
+                .filter(showtime -> !showtime.getId().equals(showtimeId))
                 .toList();
 
         if (!overlappingShowtimes.isEmpty()) {
-            throw new ConflictException(ErrorCode.SHOWTIME_OVERLAP, "There is already a showtime scheduled in this theater at the requested time");
+            throw new ConflictException(ErrorCode.SHOWTIME_OVERLAP,
+                    "There is already a showtime scheduled in this theater at the requested time");
         }
+    }
 
-        // Update the showtime
+    private Showtime updateShowtimeEntity(Showtime existingShowtime, Movie movie,
+                                          Theater theater, ShowtimeRequest request) {
         existingShowtime.setMovie(movie);
         existingShowtime.setTheater(theater);
         existingShowtime.setStartTime(request.getStartTime());
-        existingShowtime.setEndTime(endTime);
+        existingShowtime.setEndTime(calculateEndTime(request.getStartTime(), movie));
         existingShowtime.setMaxSeats(request.getMaxSeats());
         existingShowtime.setAvailableSeats(request.getMaxSeats());
+        return existingShowtime;
+    }
 
-        Showtime updatedShowtime = showtimeRepository.save(existingShowtime);
-        return showtimeMapper.toResponse(updatedShowtime);
+    private Showtime saveShowtime(Showtime showtime) {
+        return showtimeRepository.save(showtime);
     }
 
     @Override

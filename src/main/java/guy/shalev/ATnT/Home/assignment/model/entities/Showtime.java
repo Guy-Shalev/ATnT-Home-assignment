@@ -46,7 +46,4 @@ public class Showtime {
 
     @OneToMany(mappedBy = "showtime", cascade = CascadeType.ALL)
     private List<Booking> bookings = new ArrayList<>();
-
-    @Version
-    private Long version; // For optimistic locking
 }

@@ -23,7 +23,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @Transactional(transactionManager = "transactionManager")
@@ -60,6 +62,17 @@ public class BookingServiceImpl implements BookingService {
         validateAvailableSeats(showtime, request.getSeats().size());
         validateSeatNumbers(showtime, request.getSeats());
         validateSeatsNotBooked(showtime, request.getSeats());
+        validateNoDuplicateSeats(request.getSeats());
+    }
+
+    private void validateNoDuplicateSeats(List<SeatRequest> seats) {
+        Set<Integer> uniqueSeats = new HashSet<>();
+        for (SeatRequest seat : seats) {
+            if (!uniqueSeats.add(seat.getSeatNumber())) {
+                throw new ConflictException(ErrorCode.SEAT_ALREADY_BOOKED,
+                        "Cannot book the same seat twice: " + seat.getSeatNumber());
+            }
+        }
     }
 
     private void validateAvailableSeats(Showtime showtime, int requestedSeats) {
