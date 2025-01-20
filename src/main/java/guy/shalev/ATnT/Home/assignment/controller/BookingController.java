@@ -1,6 +1,5 @@
 package guy.shalev.ATnT.Home.assignment.controller;
 
-import guy.shalev.ATnT.Home.assignment.exception.NotFoundException;
 import guy.shalev.ATnT.Home.assignment.model.dto.request.BookingRequest;
 import guy.shalev.ATnT.Home.assignment.model.dto.response.BookingResponse;
 import guy.shalev.ATnT.Home.assignment.service.BookingService;

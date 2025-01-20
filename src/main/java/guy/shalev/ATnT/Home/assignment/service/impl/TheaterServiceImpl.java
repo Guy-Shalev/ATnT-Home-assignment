@@ -1,8 +1,9 @@
 package guy.shalev.ATnT.Home.assignment.service.impl;
 
-import guy.shalev.ATnT.Home.assignment.exception.BadRequestException;
-import guy.shalev.ATnT.Home.assignment.exception.ConflictException;
-import guy.shalev.ATnT.Home.assignment.exception.NotFoundException;
+import guy.shalev.ATnT.Home.assignment.exception.ErrorCode;
+import guy.shalev.ATnT.Home.assignment.exception.exceptions.BadRequestException;
+import guy.shalev.ATnT.Home.assignment.exception.exceptions.ConflictException;
+import guy.shalev.ATnT.Home.assignment.exception.exceptions.NotFoundException;
 import guy.shalev.ATnT.Home.assignment.mapper.TheaterMapper;
 import guy.shalev.ATnT.Home.assignment.model.dto.request.TheaterRequest;
 import guy.shalev.ATnT.Home.assignment.model.dto.response.TheaterResponse;
@@ -28,7 +29,7 @@ public class TheaterServiceImpl implements TheaterService {
         // Check if theater with same name already exists
         theaterRepository.findByName(request.getName())
                 .ifPresent(theater -> {
-                    throw new ConflictException("Theater already exists with name: " + request.getName());
+                    throw new ConflictException(ErrorCode.THEATER_NAME_EXISTS, "Theater already exists with name: " + request.getName());
                 });
 
         Theater theater = theaterMapper.toEntity(request);
@@ -40,7 +41,7 @@ public class TheaterServiceImpl implements TheaterService {
     @Override
     public TheaterResponse getTheater(Long id) {
         Theater theater = theaterRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Theater not found with id: " + id));
+                .orElseThrow(() -> new NotFoundException(ErrorCode.THEATER_NOT_FOUND, "Theater not found with id: " + id));
         return theaterMapper.toResponse(theater);
     }
 
@@ -54,13 +55,13 @@ public class TheaterServiceImpl implements TheaterService {
     @Override
     public TheaterResponse updateTheater(Long id, TheaterRequest request) {
         Theater existingTheater = theaterRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Theater not found with id: " + id));
+                .orElseThrow(() -> new NotFoundException(ErrorCode.THEATER_NOT_FOUND, "Theater not found with id: " + id));
 
         // Check if new name conflicts with another theater
         theaterRepository.findByName(request.getName())
                 .ifPresent(theater -> {
                     if (!theater.getId().equals(id)) {
-                        throw new ConflictException("Theater already exists with name: " + request.getName());
+                        throw new ConflictException(ErrorCode.THEATER_NAME_EXISTS, "Theater already exists with name: " + request.getName());
                     }
                 });
 
@@ -74,11 +75,11 @@ public class TheaterServiceImpl implements TheaterService {
     @Override
     public void deleteTheater(Long id) {
         Theater theater = theaterRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Theater not found with id: " + id));
+                .orElseThrow(() -> new NotFoundException(ErrorCode.THEATER_NOT_FOUND, "Theater not found with id: " + id));
 
         // Check if theater has any scheduled showtimes
         if (!theater.getShowtimes().isEmpty()) {
-            throw new BadRequestException("Cannot delete theater with scheduled showtimes");
+            throw new BadRequestException(ErrorCode.THEATER_IN_USE, "Cannot delete theater with scheduled showtimes");
         }
 
         theaterRepository.deleteById(id);

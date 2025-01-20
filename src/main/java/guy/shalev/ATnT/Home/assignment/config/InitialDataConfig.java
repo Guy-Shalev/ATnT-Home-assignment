@@ -1,10 +1,9 @@
 package guy.shalev.ATnT.Home.assignment.config;
 
-import guy.shalev.ATnT.Home.assignment.exception.ConflictException;
+import guy.shalev.ATnT.Home.assignment.exception.exceptions.ConflictException;
 import guy.shalev.ATnT.Home.assignment.model.dto.request.UserRequest;
 import guy.shalev.ATnT.Home.assignment.model.enums.UserRole;
 import guy.shalev.ATnT.Home.assignment.service.UserService;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;

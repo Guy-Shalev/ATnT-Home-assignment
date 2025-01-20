@@ -1,6 +1,7 @@
 package guy.shalev.ATnT.Home.assignment.service.impl;
 
-import guy.shalev.ATnT.Home.assignment.exception.NotFoundException;
+import guy.shalev.ATnT.Home.assignment.exception.ErrorCode;
+import guy.shalev.ATnT.Home.assignment.exception.exceptions.NotFoundException;
 import guy.shalev.ATnT.Home.assignment.mapper.MovieMapper;
 import guy.shalev.ATnT.Home.assignment.model.dto.request.MovieRequest;
 import guy.shalev.ATnT.Home.assignment.model.dto.response.MovieResponse;
@@ -32,7 +33,7 @@ public class MovieServiceImpl implements MovieService {
     @Override
     public MovieResponse getMovie(Long id) {
         Movie movie = movieRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Movie not found with id: " + id));
+                .orElseThrow(() -> new NotFoundException(ErrorCode.MOVIE_NOT_FOUND, "Movie not found with id: " + id));
         return movieMapper.toResponse(movie);
     }
 
@@ -46,7 +47,7 @@ public class MovieServiceImpl implements MovieService {
     @Override
     public MovieResponse updateMovie(Long id, MovieRequest request) {
         Movie existingMovie = movieRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Movie not found with id: " + id));
+                .orElseThrow(() -> new NotFoundException(ErrorCode.MOVIE_NOT_FOUND, "Movie not found with id: " + id));
 
         // Update the existing movie with the new data
         existingMovie.setTitle(request.getTitle());
@@ -62,7 +63,7 @@ public class MovieServiceImpl implements MovieService {
     @Override
     public void deleteMovie(Long id) {
         if (!movieRepository.existsById(id)) {
-            throw new NotFoundException("Movie not found with id: " + id);
+            throw new NotFoundException(ErrorCode.MOVIE_NOT_FOUND, "Movie not found with id: " + id);
         }
         movieRepository.deleteById(id);
     }

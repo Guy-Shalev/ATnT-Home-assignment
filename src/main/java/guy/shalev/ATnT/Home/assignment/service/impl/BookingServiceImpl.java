@@ -1,8 +1,9 @@
 package guy.shalev.ATnT.Home.assignment.service.impl;
 
-import guy.shalev.ATnT.Home.assignment.exception.BadRequestException;
-import guy.shalev.ATnT.Home.assignment.exception.ConflictException;
-import guy.shalev.ATnT.Home.assignment.exception.NotFoundException;
+import guy.shalev.ATnT.Home.assignment.exception.ErrorCode;
+import guy.shalev.ATnT.Home.assignment.exception.exceptions.BadRequestException;
+import guy.shalev.ATnT.Home.assignment.exception.exceptions.ConflictException;
+import guy.shalev.ATnT.Home.assignment.exception.exceptions.NotFoundException;
 import guy.shalev.ATnT.Home.assignment.mapper.BookingMapper;
 import guy.shalev.ATnT.Home.assignment.model.dto.request.BookingRequest;
 import guy.shalev.ATnT.Home.assignment.model.dto.request.SeatRequest;
@@ -52,7 +53,7 @@ public class BookingServiceImpl implements BookingService {
 
     private Showtime getShowtimeWithLock(Long showtimeId) {
         return showtimeRepository.findByIdWithLock(showtimeId)
-                .orElseThrow(() -> new NotFoundException("Showtime not found with id: " + showtimeId));
+                .orElseThrow(() -> new NotFoundException(ErrorCode.SHOWTIME_NOT_FOUND, "Showtime not found with id: " + showtimeId));
     }
 
     private void validateBookingRequest(Showtime showtime, BookingRequest request) {
@@ -63,7 +64,7 @@ public class BookingServiceImpl implements BookingService {
 
     private void validateAvailableSeats(Showtime showtime, int requestedSeats) {
         if (showtime.getAvailableSeats() < requestedSeats) {
-            throw new ConflictException(String.format(
+            throw new ConflictException(ErrorCode.INSUFFICIENT_SEATS, String.format(
                     "Not enough seats available. Requested: %d, Available: %d",
                     requestedSeats, showtime.getAvailableSeats()));
         }
@@ -72,7 +73,7 @@ public class BookingServiceImpl implements BookingService {
     private void validateSeatNumbers(Showtime showtime, List<SeatRequest> seats) {
         for (SeatRequest seat : seats) {
             if (seat.getSeatNumber() > showtime.getMaxSeats()) {
-                throw new BadRequestException(
+                throw new BadRequestException(ErrorCode.INVALID_SEAT_NUMBER,
                         "Invalid seat number " + seat.getSeatNumber() +
                                 ". Maximum seat number is: " + showtime.getMaxSeats());
             }
@@ -99,7 +100,7 @@ public class BookingServiceImpl implements BookingService {
     private void validateSeatsNotBooked(Showtime showtime, List<SeatRequest> seats) {
         for (SeatRequest seat : seats) {
             if (bookingRepository.findByShowtimeAndSeatNumber(showtime, seat.getSeatNumber()).isPresent()) {
-                throw new ConflictException("Seat " + seat.getSeatNumber() + " is already booked");
+                throw new ConflictException(ErrorCode.SEAT_ALREADY_BOOKED, "Seat " + seat.getSeatNumber() + " is already booked");
             }
         }
     }
@@ -113,7 +114,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public BookingResponse getBooking(Long id) {
         Booking booking = bookingRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Booking not found with id: " + id));
+                .orElseThrow(() -> new NotFoundException(ErrorCode.BOOKING_NOT_FOUND, "Booking not found with id: " + id));
         return bookingMapper.toResponse(booking);
     }
 
@@ -135,6 +136,6 @@ public class BookingServiceImpl implements BookingService {
 
     private User getUserByUsername(String username) {
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new NotFoundException("User not found with username: " + username));
+                .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND, "User not found with username: " + username));
     }
 }

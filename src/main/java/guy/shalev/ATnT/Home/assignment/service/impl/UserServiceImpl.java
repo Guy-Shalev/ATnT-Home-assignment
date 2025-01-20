@@ -1,11 +1,11 @@
 package guy.shalev.ATnT.Home.assignment.service.impl;
 
-import guy.shalev.ATnT.Home.assignment.exception.ConflictException;
-import guy.shalev.ATnT.Home.assignment.exception.NotFoundException;
+import guy.shalev.ATnT.Home.assignment.exception.ErrorCode;
+import guy.shalev.ATnT.Home.assignment.exception.exceptions.ConflictException;
+import guy.shalev.ATnT.Home.assignment.exception.exceptions.NotFoundException;
 import guy.shalev.ATnT.Home.assignment.model.dto.request.UserRequest;
 import guy.shalev.ATnT.Home.assignment.model.dto.response.UserResponse;
 import guy.shalev.ATnT.Home.assignment.model.entities.User;
-import guy.shalev.ATnT.Home.assignment.model.enums.UserRole;
 import guy.shalev.ATnT.Home.assignment.repository.UserRepository;
 import guy.shalev.ATnT.Home.assignment.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -27,22 +27,15 @@ public class UserServiceImpl implements UserService {
     public void registerUser(UserRequest request) {
         // Check if username already exists
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-            throw new ConflictException("Username already exists");
+            throw new ConflictException(ErrorCode.USERNAME_ALREADY_EXISTS, "Username already exists");
         }
 
-        // Save to Spring Security users table
-        jdbcTemplate.update(
-                "INSERT INTO users (username, password, enabled) VALUES (?, ?, ?)",
+        // Insert security details
+        userRepository.insertSecurityDetails(
                 request.getUsername(),
                 passwordEncoder.encode(request.getPassword()),
-                true
-        );
-
-        // Save to Spring Security authorities table
-        jdbcTemplate.update(
-                "INSERT INTO authorities (username, authority) VALUES (?, ?)",
-                request.getUsername(),
-                request.getRole() == UserRole.ADMIN ? "ROLE_ADMIN" : "ROLE_CUSTOMER"
+                request.getRole(),
+                jdbcTemplate
         );
 
         // Save to our application users table
@@ -59,7 +52,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse getCurrentUser(String username) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+                .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND, "User not found with username: " + username));
 
         return UserResponse.builder()
                 .id(user.getId())
