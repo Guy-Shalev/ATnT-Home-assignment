@@ -26,6 +26,5 @@ public interface ShowtimeMapper {
     @Mapping(target = "availableSeats", source = "request.maxSeats")
     @Mapping(target = "maxSeats", source = "request.maxSeats")
     @Mapping(target = "bookings", ignore = true)
-    @Mapping(target = "version", ignore = true)
     Showtime toEntity(Movie movie, Theater theater, ShowtimeRequest request, LocalDateTime endTime);
 }

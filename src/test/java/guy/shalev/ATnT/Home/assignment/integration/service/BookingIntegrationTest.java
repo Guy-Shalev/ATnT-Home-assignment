@@ -1,8 +1,9 @@
-package guy.shalev.ATnT.Home.assignment.integration;
+package guy.shalev.ATnT.Home.assignment.integration.service;
 
 import guy.shalev.ATnT.Home.assignment.exception.exceptions.BadRequestException;
 import guy.shalev.ATnT.Home.assignment.exception.exceptions.ConflictException;
 import guy.shalev.ATnT.Home.assignment.exception.exceptions.NotFoundException;
+import guy.shalev.ATnT.Home.assignment.integration.BaseIntegrationTest;
 import guy.shalev.ATnT.Home.assignment.model.dto.request.*;
 import guy.shalev.ATnT.Home.assignment.model.dto.response.BookingResponse;
 import guy.shalev.ATnT.Home.assignment.model.dto.response.MovieResponse;

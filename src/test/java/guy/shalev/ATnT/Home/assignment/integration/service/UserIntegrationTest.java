@@ -1,7 +1,8 @@
-package guy.shalev.ATnT.Home.assignment.integration;
+package guy.shalev.ATnT.Home.assignment.integration.service;
 
 import guy.shalev.ATnT.Home.assignment.exception.exceptions.ConflictException;
 import guy.shalev.ATnT.Home.assignment.exception.exceptions.NotFoundException;
+import guy.shalev.ATnT.Home.assignment.integration.BaseIntegrationTest;
 import guy.shalev.ATnT.Home.assignment.model.dto.request.UserRequest;
 import guy.shalev.ATnT.Home.assignment.model.dto.response.UserResponse;
 import guy.shalev.ATnT.Home.assignment.model.entities.User;

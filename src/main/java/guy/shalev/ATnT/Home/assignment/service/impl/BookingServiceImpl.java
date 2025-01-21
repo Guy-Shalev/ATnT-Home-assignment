@@ -18,6 +18,9 @@ import guy.shalev.ATnT.Home.assignment.repository.UserRepository;
 import guy.shalev.ATnT.Home.assignment.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -128,6 +131,19 @@ public class BookingServiceImpl implements BookingService {
     public BookingResponse getBooking(Long id) {
         Booking booking = bookingRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.BOOKING_NOT_FOUND, "Booking not found with id: " + id));
+
+        // Get current authenticated user through Spring Security
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null) {  // If authentication exists, check authorization
+            String currentUsername = authentication.getName();
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+            if (!booking.getUser().getUsername().equals(currentUsername) && !isAdmin) {
+                throw new AccessDeniedException("Access denied. You can only view your own bookings.");
+            }
+        }
+
         return bookingMapper.toResponse(booking);
     }
 

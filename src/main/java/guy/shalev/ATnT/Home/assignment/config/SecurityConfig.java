@@ -1,11 +1,14 @@
 package guy.shalev.ATnT.Home.assignment.config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -23,6 +26,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import javax.sql.DataSource;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Configuration
@@ -42,19 +46,23 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
                         .requestMatchers("/h2-console/**").permitAll() // Allow H2 console
-                        .requestMatchers("/api/users/**").permitAll()
+                        .requestMatchers("/api/users/register").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/movies/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/showtimes/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/theaters/**").permitAll()
                         // Admin endpoints
                         .requestMatchers(HttpMethod.POST, "/api/movies/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/movies/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/movies/**").hasRole("ADMIN")
-                        .requestMatchers("/api/theaters/**").hasRole("ADMIN")
-                        .requestMatchers("/api/showtimes/create").hasRole("ADMIN")
-                        .requestMatchers("/api/showtimes/update/**").hasRole("ADMIN")
-                        .requestMatchers("/api/showtimes/delete/**").hasRole("ADMIN")
-                        // Customer endpoints
-                        .requestMatchers("/api/bookings/**").hasRole("CUSTOMER")
+                        .requestMatchers(HttpMethod.POST,"/api/theaters/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT,"/api/theaters/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE,"/api/theaters/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/showtimes").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/showtimes/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/showtimes/**").hasRole("ADMIN")
+                        // Customer and Admin endpoints
+                        .requestMatchers("/api/bookings/**").hasAnyRole("CUSTOMER", "ADMIN")
+                        .requestMatchers("/api/users/current").hasAnyRole("CUSTOMER", "ADMIN")
                         // All other endpoints require authentication
                         .anyRequest().authenticated()
                 )

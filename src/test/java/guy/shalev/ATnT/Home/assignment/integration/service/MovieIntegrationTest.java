@@ -1,6 +1,7 @@
-package guy.shalev.ATnT.Home.assignment.integration;
+package guy.shalev.ATnT.Home.assignment.integration.service;
 
 import guy.shalev.ATnT.Home.assignment.exception.exceptions.NotFoundException;
+import guy.shalev.ATnT.Home.assignment.integration.BaseIntegrationTest;
 import guy.shalev.ATnT.Home.assignment.model.dto.request.MovieRequest;
 import guy.shalev.ATnT.Home.assignment.model.dto.response.MovieResponse;
 import guy.shalev.ATnT.Home.assignment.model.entities.Movie;
